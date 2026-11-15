@@ -18,30 +18,17 @@ queue = [
 
 # --- ADD ENDPOINTS BELOW ---
 # Member 1: GET /queue & POST /queue
-@app.route('/queue', methods=['GET'])
-def get_queue():
-    if not queue:
-        return jsonify({"error": "The clinic queue is currently empty"}), 404
-    return jsonify({"queue": queue}), 200
-
-@app.route('/queue', methods=['POST'])
-def add_patient():
-    data = request.get_json()
-    if not data or not data.get('patient_name', '').strip():
-        return jsonify({"error": "patient_name is required"}), 400
-    
-    # Auto-increment queue_number based on the highest existing number
-    next_number = max((p['queue_number'] for p in queue), default=0) + 1
-    
-    new_patient = {
-        "queue_number": next_number,
-        "patient_name": data['patient_name'].strip(),
-        "status": "waiting"
-    }
-    queue.append(new_patient)
-    return jsonify(new_patient), 201
 # Member 2: GET /queue/<int:queue_number> & PUT /queue/<int:queue_number>
 # Member 3: DELETE /queue/<int:queue_number>
+@app.route('/queue/<int:queue_number>', methods=['DELETE'])
+def delete_patient(queue_number):
+    global queue
+    patient = next((p for p in queue if p['queue_number'] == queue_number), None)
+    if not patient:
+        return jsonify({"error": f"Patient with queue number {queue_number} not found"}), 404
+    
+    queue = [p for p in queue if p['queue_number'] != queue_number]
+    return jsonify({"message": f"Queue number {queue_number} removed successfully"}), 200
 
 if __name__ == "__main__":
     app.run(debug=True)
